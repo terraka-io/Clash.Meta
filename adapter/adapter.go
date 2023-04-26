@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Dreamacro/clash/common/queue"
-	"github.com/Dreamacro/clash/component/dialer"
-	C "github.com/Dreamacro/clash/constant"
 	"net"
 	"net/http"
 	"net/netip"
 	"net/url"
 	"time"
+
+	"github.com/Dreamacro/clash/common/queue"
+	"github.com/Dreamacro/clash/component/dialer"
+	C "github.com/Dreamacro/clash/constant"
 
 	"go.uber.org/atomic"
 )
@@ -112,8 +113,6 @@ func (p *Proxy) URLTest(ctx context.Context, url string) (t uint16, err error) {
 		}
 	}()
 
-	unifiedDelay := UnifiedDelay.Load()
-
 	addr, err := urlToMetadata(url)
 	if err != nil {
 		return
@@ -156,23 +155,18 @@ func (p *Proxy) URLTest(ctx context.Context, url string) (t uint16, err error) {
 	defer client.CloseIdleConnections()
 
 	resp, err := client.Do(req)
-
 	if err != nil {
 		return
 	}
-
 	_ = resp.Body.Close()
 
-	if unifiedDelay {
-		second := time.Now()
-		resp, err = client.Do(req)
-		if err == nil {
-			_ = resp.Body.Close()
-			start = second
-		}
+	resp, err = client.Do(req)
+	if err != nil {
+		return
 	}
+	_ = resp.Body.Close()
 
-	t = uint16(time.Since(start) / time.Millisecond)
+	t = uint16(time.Since(start) / time.Millisecond / 2)
 	return
 }
 
