@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"time"
 
 	N "github.com/Dreamacro/clash/common/net"
 	"github.com/Dreamacro/clash/component/dialer"
@@ -48,6 +49,32 @@ type TrojanOption struct {
 	Flow              string         `proxy:"flow,omitempty"`
 	FlowShow          bool           `proxy:"flow-show,omitempty"`
 	ClientFingerprint string         `proxy:"client-fingerprint,omitempty"`
+}
+
+func (t *Trojan) DialContextTest(ctx context.Context) (tlsDelay uint16, err error) {
+	startTime := time.Now()
+	var c net.Conn
+	c, err = dialer.DialContext(ctx, "tcp", t.addr)
+	if err != nil {
+		err = fmt.Errorf("%s connect error: %w", t.addr, err)
+		return
+	}
+	tcpKeepAlive(c)
+
+	defer func(c net.Conn) {
+		safeConnClose(c, err)
+	}(c)
+
+	if tlsC.HaveGlobalFingerprint() && len(t.option.ClientFingerprint) == 0 {
+		t.option.ClientFingerprint = tlsC.GetGlobalFingerprint()
+	}
+
+	c, err = t.instance.StreamConn(c)
+	if err != nil {
+		return
+	}
+	tlsDelay = uint16(time.Since(startTime) / time.Millisecond)
+	return
 }
 
 func (t *Trojan) plainStream(c net.Conn) (net.Conn, error) {

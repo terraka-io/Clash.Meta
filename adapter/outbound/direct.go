@@ -13,6 +13,10 @@ type Direct struct {
 	*Base
 }
 
+func (d *Direct) DialContextTest(ctx context.Context) (tlsDelay uint16, err error) {
+	return 0, nil
+}
+
 // DialContext implements C.ProxyAdapter
 func (d *Direct) DialContext(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (C.Conn, error) {
 	opts = append(opts, dialer.WithResolver(resolver.DefaultResolver))

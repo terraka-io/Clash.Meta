@@ -97,6 +97,8 @@ type ProxyAdapter interface {
 	SupportTFO() bool
 	MarshalJSON() ([]byte, error)
 
+	DialContextTest(ctx context.Context) (uint16, error)
+
 	// Deprecated: use DialContextWithDialer and ListenPacketWithDialer instead.
 	// StreamConn wraps a protocol around net.Conn with Metadata.
 	//
