@@ -3,6 +3,7 @@ package outbound
 import (
 	"context"
 	"errors"
+
 	"github.com/Dreamacro/clash/component/dialer"
 	"github.com/Dreamacro/clash/component/resolver"
 	C "github.com/Dreamacro/clash/constant"
@@ -10,6 +11,10 @@ import (
 
 type Direct struct {
 	*Base
+}
+
+func (d *Direct) DialContextTest(ctx context.Context) (tlsDelay uint16, err error) {
+	return 0, nil
 }
 
 // DialContext implements C.ProxyAdapter

@@ -434,6 +434,10 @@ type refProxyAdapter struct {
 	mutex        sync.Mutex
 }
 
+func (r *refProxyAdapter) DialContextTest(ctx context.Context) (tlsDelay uint16, err error) {
+	return r.proxyAdapter.DialContextTest(ctx)
+}
+
 func (r *refProxyAdapter) SetProxyAdapter(proxyAdapter C.ProxyAdapter) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
