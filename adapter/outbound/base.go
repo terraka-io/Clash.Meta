@@ -45,6 +45,10 @@ func (b *Base) Type() C.AdapterType {
 	return b.tp
 }
 
+func (b *Base) DialContextTest(ctx context.Context) (tlsDelay uint16, err error) {
+	return 0, errors.New("no support")
+}
+
 // StreamConn implements C.ProxyAdapter
 func (b *Base) StreamConn(c net.Conn, metadata *C.Metadata) (net.Conn, error) {
 	return c, errors.New("no support")
