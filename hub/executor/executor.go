@@ -141,7 +141,7 @@ func ApplyConfigDelay(cfg *config.Config, force bool) {
 
 	initInnerTcp()
 	loadProxyProvider(cfg.Providers)
-	updateProfile(cfg)
+	//updateProfile(cfg)
 	loadRuleProvider(cfg.RuleProviders)
 
 	tunnel.OnRunning()
