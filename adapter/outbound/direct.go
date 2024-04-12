@@ -22,6 +22,10 @@ type DirectOption struct {
 	Name string `proxy:"name"`
 }
 
+func (d *Direct) DialContextTest(ctx context.Context) (tlsDelay uint16, err error) {
+	return 0, nil
+}
+
 // DialContext implements C.ProxyAdapter
 func (d *Direct) DialContext(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (C.Conn, error) {
 	if d.loopBack.CheckConn(metadata.SourceAddrPort()) {

@@ -117,6 +117,46 @@ func ApplyConfig(cfg *config.Config, force bool) {
 	log.SetLevel(cfg.General.LogLevel)
 }
 
+func ApplyConfigDelay(cfg *config.Config, force bool) {
+	mux.Lock()
+	defer mux.Unlock()
+
+	tunnel.OnSuspend()
+
+	ca.ResetCertificate()
+	for _, c := range cfg.TLS.CustomTrustCert {
+		if err := ca.AddCertificate(c); err != nil {
+			log.Warnln("%s\nadd error: %s", c, err.Error())
+		}
+	}
+
+	updateUsers(cfg.Users)
+	updateProxies(cfg.Proxies, cfg.Providers)
+	updateRules(cfg.Rules, cfg.SubRules, cfg.RuleProviders)
+	updateSniffer(cfg.Sniffer)
+	updateHosts(cfg.Hosts)
+	updateGeneral(cfg.General)
+	updateNTP(cfg.NTP)
+	updateDNS(cfg.DNS, cfg.RuleProviders, cfg.General.IPv6)
+	//updateListeners(cfg.General, cfg.Listeners, force)
+	updateIPTables(cfg)
+	updateTun(cfg.General)
+	updateExperimental(cfg)
+	updateTunnels(cfg.Tunnels)
+
+	tunnel.OnInnerLoading()
+
+	initInnerTcp()
+	loadProxyProvider(cfg.Providers)
+	//updateProfile(cfg)
+	loadRuleProvider(cfg.RuleProviders)
+	runtime.GC()
+	tunnel.OnRunning()
+	hcCompatibleProvider(cfg.Providers)
+
+	log.SetLevel(cfg.General.LogLevel)
+}
+
 func initInnerTcp() {
 	inner.New(tunnel.Tunnel)
 }

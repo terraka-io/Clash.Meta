@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"time"
 
 	"io"
 	"net"
@@ -40,6 +41,40 @@ type HttpOption struct {
 	SkipCertVerify bool              `proxy:"skip-cert-verify,omitempty"`
 	Fingerprint    string            `proxy:"fingerprint,omitempty"`
 	Headers        map[string]string `proxy:"headers,omitempty"`
+}
+
+func (h *Http) DialContextTest(ctx context.Context) (tlsDelay uint16, err error) {
+	startTime := time.Now()
+	var dialer C.Dialer = dialer.NewDialer(h.Base.DialOptions()...)
+	if len(h.option.DialerProxy) > 0 {
+		dialer, err = proxydialer.NewByName(h.option.DialerProxy, dialer)
+		if err != nil {
+			return
+		}
+	}
+	c, err := dialer.DialContext(ctx, "tcp", h.addr)
+	if err != nil {
+		err = fmt.Errorf("%s connect error: %w", h.addr, err)
+		return
+	}
+	N.TCPKeepAlive(c)
+
+	defer func(c net.Conn) {
+		safeConnClose(c, err)
+	}(c)
+
+	if h.tlsConfig != nil {
+		cc := tls.Client(c, h.tlsConfig)
+		ctx, cancel := context.WithTimeout(context.Background(), C.DefaultTLSTimeout)
+		defer cancel()
+		if err = cc.HandshakeContext(ctx); err != nil {
+			err = fmt.Errorf("%s connect error: %w", h.addr, err)
+			return
+		}
+		defer cc.Close()
+	}
+	tlsDelay = uint16(time.Since(startTime) / time.Millisecond)
+	return
 }
 
 // StreamConnContext implements C.ProxyAdapter

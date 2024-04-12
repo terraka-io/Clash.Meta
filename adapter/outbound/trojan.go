@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"time"
 
 	N "github.com/metacubex/mihomo/common/net"
 	"github.com/metacubex/mihomo/component/ca"
@@ -47,6 +48,38 @@ type TrojanOption struct {
 	GrpcOpts          GrpcOptions    `proxy:"grpc-opts,omitempty"`
 	WSOpts            WSOptions      `proxy:"ws-opts,omitempty"`
 	ClientFingerprint string         `proxy:"client-fingerprint,omitempty"`
+}
+
+func (t *Trojan) DialContextTest(ctx context.Context) (tlsDelay uint16, err error) {
+	startTime := time.Now()
+	var dialer C.Dialer = dialer.NewDialer(t.Base.DialOptions()...)
+	if len(t.option.DialerProxy) > 0 {
+		dialer, err = proxydialer.NewByName(t.option.DialerProxy, dialer)
+		if err != nil {
+			return
+		}
+	}
+	c, err := dialer.DialContext(ctx, "tcp", t.addr)
+	if err != nil {
+		err = fmt.Errorf("%s connect error: %w", t.addr, err)
+		return
+	}
+	N.TCPKeepAlive(c)
+
+	defer func(c net.Conn) {
+		safeConnClose(c, err)
+	}(c)
+
+	if tlsC.HaveGlobalFingerprint() && len(t.option.ClientFingerprint) == 0 {
+		t.option.ClientFingerprint = tlsC.GetGlobalFingerprint()
+	}
+
+	c, err = t.instance.StreamConn(ctx, c)
+	if err != nil {
+		return
+	}
+	tlsDelay = uint16(time.Since(startTime) / time.Millisecond)
+	return
 }
 
 func (t *Trojan) plainStream(ctx context.Context, c net.Conn) (net.Conn, error) {
