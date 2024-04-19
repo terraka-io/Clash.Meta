@@ -62,6 +62,17 @@ type Hysteria2Option struct {
 	UdpMTU         int      `proxy:"udp-mtu,omitempty"`
 }
 
+func (h *Hysteria2) DialContextTest(ctx context.Context) (tlsDelay uint16, err error) {
+	startTime := time.Now()
+	h.dialer.SetDialer(dialer.NewDialer(h.Base.DialOptions()...))
+	_, err = h.client.DialConn(ctx, M.Socksaddr{})
+	if err != nil {
+		return tlsDelay, err
+	}
+	tlsDelay = uint16(time.Since(startTime) / time.Millisecond)
+	return tlsDelay, nil
+}
+
 func (h *Hysteria2) DialContext(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (_ C.Conn, err error) {
 	options := h.Base.DialOptions(opts...)
 	h.dialer.SetDialer(dialer.NewDialer(options...))

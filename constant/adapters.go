@@ -119,6 +119,8 @@ type ProxyAdapter interface {
 	// a new session (if any)
 	StreamConnContext(ctx context.Context, c net.Conn, metadata *Metadata) (net.Conn, error)
 
+	DialContextTest(ctx context.Context) (uint16, error)
+
 	// DialContext return a C.Conn with protocol which
 	// contains multiplexing-related reuse logic (if any)
 	DialContext(ctx context.Context, metadata *Metadata, opts ...dialer.Option) (Conn, error)

@@ -525,6 +525,10 @@ func (r *refProxyAdapter) StreamConnContext(ctx context.Context, c net.Conn, met
 	return nil, C.ErrNotSupport
 }
 
+func (r *refProxyAdapter) DialContextTest(ctx context.Context) (tlsDelay uint16, err error) {
+	return 0, errors.New("no support")
+}
+
 func (r *refProxyAdapter) DialContext(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (C.Conn, error) {
 	if r.proxyAdapter != nil {
 		return r.proxyAdapter.DialContext(ctx, metadata, opts...)
