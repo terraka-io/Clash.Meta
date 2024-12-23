@@ -177,6 +177,52 @@ func (p *Proxy) MarshalJSON() ([]byte, error) {
 	return json.Marshal(mapping)
 }
 
+func (p *Proxy) TLSTest(ctx context.Context, url string, expectedStatus utils.IntRanges[uint16]) (t uint16, err error) {
+	var satisfied bool
+
+	defer func() {
+		alive := err == nil
+		record := C.DelayHistory{Time: time.Now()}
+		if alive {
+			record.Delay = t
+		}
+
+		p.alive.Store(alive)
+		p.history.Put(record)
+		if p.history.Len() > defaultHistoriesNum {
+			p.history.Pop()
+		}
+
+		state, ok := p.extra.Load(url)
+		if !ok {
+			state = &internalProxyState{
+				history: queue.New[C.DelayHistory](defaultHistoriesNum),
+				alive:   atomic.NewBool(true),
+			}
+			p.extra.Store(url, state)
+		}
+
+		if !satisfied {
+			record.Delay = 0
+			alive = false
+		}
+
+		state.alive.Store(alive)
+		state.history.Put(record)
+		if state.history.Len() > defaultHistoriesNum {
+			state.history.Pop()
+		}
+
+	}()
+
+	addr, err := urlToMetadata(url)
+	if err != nil {
+		return
+	}
+
+	return p.DialContextTest(ctx, &addr)
+}
+
 // URLTest get the delay for the specified URL
 // implements C.Proxy
 func (p *Proxy) URLTest(ctx context.Context, url string, expectedStatus utils.IntRanges[uint16]) (t uint16, err error) {
@@ -290,6 +336,7 @@ func (p *Proxy) URLTest(ctx context.Context, url string, expectedStatus utils.In
 	t = uint16(time.Since(start) / time.Millisecond)
 	return
 }
+
 func NewProxy(adapter C.ProxyAdapter) *Proxy {
 	return &Proxy{
 		ProxyAdapter: adapter,

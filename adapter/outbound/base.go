@@ -55,6 +55,10 @@ func (b *Base) DialContext(ctx context.Context, metadata *C.Metadata, opts ...di
 	return nil, C.ErrNotSupport
 }
 
+func (b *Base) DialContextTest(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (uint16, error) {
+	return 0, C.ErrNotSupport
+}
+
 // DialContextWithDialer implements C.ProxyAdapter
 func (b *Base) DialContextWithDialer(ctx context.Context, dialer C.Dialer, metadata *C.Metadata) (_ C.Conn, err error) {
 	return nil, C.ErrNotSupport
