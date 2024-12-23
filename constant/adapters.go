@@ -134,6 +134,7 @@ type ProxyAdapter interface {
 	// DialContext return a C.Conn with protocol which
 	// contains multiplexing-related reuse logic (if any)
 	DialContext(ctx context.Context, metadata *Metadata, opts ...dialer.Option) (Conn, error)
+	DialContextTest(ctx context.Context, metadata *Metadata, opts ...dialer.Option) (uint16, error)
 	ListenPacketContext(ctx context.Context, metadata *Metadata, opts ...dialer.Option) (PacketConn, error)
 
 	// SupportUOT return UDP over TCP support
@@ -175,6 +176,7 @@ type Proxy interface {
 	DelayHistory() []DelayHistory
 	ExtraDelayHistories() map[string]ProxyState
 	LastDelayForTestUrl(url string) uint16
+	TLSTest(ctx context.Context, url string, expectedStatus utils.IntRanges[uint16]) (uint16, error)
 	URLTest(ctx context.Context, url string, expectedStatus utils.IntRanges[uint16]) (uint16, error)
 
 	// Deprecated: use DialContext instead.

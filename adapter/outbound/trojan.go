@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/metacubex/mihomo/component/ca"
 	"github.com/metacubex/mihomo/component/dialer"
@@ -139,6 +140,52 @@ func (t *Trojan) DialContext(ctx context.Context, metadata *C.Metadata, opts ...
 		return NewConn(c, t), nil
 	}
 	return t.DialContextWithDialer(ctx, dialer.NewDialer(t.Base.DialOptions(opts...)...), metadata)
+}
+
+func (t *Trojan) DialContextTest(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (tlsTime uint16, err error) {
+	startTime := time.Now()
+	// gun transport
+	if t.transport != nil && len(opts) == 0 {
+		c, err := gun.StreamGunWithTransport(t.transport, t.gunConfig)
+		if err != nil {
+			return 0, err
+		}
+
+		if t.ssCipher != nil {
+			c = t.ssCipher.StreamConn(c)
+		}
+
+		if err = t.instance.WriteHeader(c, trojan.CommandTCP, serializesSocksAddr(metadata)); err != nil {
+			c.Close()
+			return 0, err
+		}
+
+		tlsTime = uint16(time.Since(startTime).Milliseconds())
+		return tlsTime, nil
+	}
+
+	var dialer C.Dialer = dialer.NewDialer(t.Base.DialOptions(opts...)...)
+	if len(t.option.DialerProxy) > 0 {
+		dialer, err = proxydialer.NewByName(t.option.DialerProxy, dialer)
+		if err != nil {
+			return 0, err
+		}
+	}
+	c, err := dialer.DialContext(ctx, "tcp", t.addr)
+	if err != nil {
+		return 0, fmt.Errorf("%s connect error: %w", t.addr, err)
+	}
+
+	defer func(c net.Conn) {
+		safeConnClose(c, err)
+	}(c)
+
+	c, err = t.StreamConnContext(ctx, c, metadata)
+	if err != nil {
+		return 0, err
+	}
+	tlsTime = uint16(time.Since(startTime).Milliseconds())
+	return tlsTime, nil
 }
 
 // DialContextWithDialer implements C.ProxyAdapter

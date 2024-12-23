@@ -206,6 +206,34 @@ func (gb *GroupBase) GetProxies(touch bool) []C.Proxy {
 	return proxies
 }
 
+func (gb *GroupBase) TLSTest(ctx context.Context, url string, expectedStatus utils.IntRanges[uint16]) (map[string]uint16, error) {
+	var wg sync.WaitGroup
+	var lock sync.Mutex
+	mp := map[string]uint16{}
+	proxies := gb.GetProxies(false)
+	for _, proxy := range proxies {
+		proxy := proxy
+		wg.Add(1)
+		go func() {
+			delay, err := proxy.TLSTest(ctx, url, expectedStatus)
+			if err == nil {
+				lock.Lock()
+				mp[proxy.Name()] = delay
+				lock.Unlock()
+			}
+
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+
+	if len(mp) == 0 {
+		return mp, fmt.Errorf("get delay: all proxies timeout")
+	} else {
+		return mp, nil
+	}
+}
+
 func (gb *GroupBase) URLTest(ctx context.Context, url string, expectedStatus utils.IntRanges[uint16]) (map[string]uint16, error) {
 	var wg sync.WaitGroup
 	var lock sync.Mutex

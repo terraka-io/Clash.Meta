@@ -74,6 +74,19 @@ func (h *Hysteria2) DialContext(ctx context.Context, metadata *C.Metadata, opts 
 	return NewConn(CN.NewRefConn(c, h), h), nil
 }
 
+func (h *Hysteria2) DialContextTest(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (tlsTime uint16, err error) {
+	startTime := time.Now()
+	options := h.Base.DialOptions(opts...)
+	h.dialer.SetDialer(dialer.NewDialer(options...))
+	c, err := h.client.DialConn(ctx, M.ParseSocksaddrHostPort(metadata.String(), metadata.DstPort))
+	if err != nil {
+		return 0, err
+	}
+	_ = c.Close()
+	tlsTime = uint16(time.Since(startTime).Milliseconds())
+	return tlsTime, nil
+}
+
 func (h *Hysteria2) ListenPacketContext(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (_ C.PacketConn, err error) {
 	options := h.Base.DialOptions(opts...)
 	h.dialer.SetDialer(dialer.NewDialer(options...))

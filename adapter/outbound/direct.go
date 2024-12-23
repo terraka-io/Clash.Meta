@@ -3,6 +3,8 @@ package outbound
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/metacubex/mihomo/component/dialer"
 	"github.com/metacubex/mihomo/component/loopback"
 	"github.com/metacubex/mihomo/component/resolver"
@@ -30,6 +32,21 @@ func (d *Direct) DialContext(ctx context.Context, metadata *C.Metadata, opts ...
 		return nil, err
 	}
 	return d.loopBack.NewConn(NewConn(c, d)), nil
+}
+
+func (d *Direct) DialContextTest(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (uint16, error) {
+	startTime := time.Now()
+	if err := d.loopBack.CheckConn(metadata); err != nil {
+		return 0, err
+	}
+	opts = append(opts, dialer.WithResolver(resolver.DirectHostResolver))
+	c, err := dialer.DialContext(ctx, "tcp", metadata.RemoteAddress(), d.Base.DialOptions(opts...)...)
+	if err != nil {
+		return 0, err
+	}
+	d.loopBack.NewConn(NewConn(c, d))
+	useTime := time.Since(startTime)
+	return uint16(useTime.Milliseconds()), nil
 }
 
 // ListenPacketContext implements C.ProxyAdapter

@@ -639,6 +639,10 @@ func (r *refProxyAdapter) DialContext(ctx context.Context, metadata *C.Metadata,
 	return nil, C.ErrNotSupport
 }
 
+func (r *refProxyAdapter) DialContextTest(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (uint16, error) {
+	return 0, C.ErrNotSupport
+}
+
 func (r *refProxyAdapter) ListenPacketContext(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (C.PacketConn, error) {
 	if r.proxyAdapter != nil {
 		return r.proxyAdapter.ListenPacketContext(ctx, metadata, opts...)
