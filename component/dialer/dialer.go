@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/metacubex/mihomo/common/atomic"
 	"github.com/metacubex/mihomo/component/keepalive"
 	"github.com/metacubex/mihomo/component/resolver"
 	"github.com/metacubex/mihomo/log"
@@ -21,6 +22,8 @@ const (
 	DefaultTCPTimeout = 5 * time.Second
 	DefaultUDPTimeout = DefaultTCPTimeout
 )
+
+var IsDelayServer = atomic.NewBool(false)
 
 type dialFunc func(ctx context.Context, network string, ips []netip.Addr, port string, opt *option) (net.Conn, error)
 
@@ -47,6 +50,9 @@ func applyOptions(options ...Option) *option {
 		o(opt)
 	}
 
+	if IsDelayServer.Load() {
+		log.Infoln("=====> applyOptions use interfaceName: %s", opt.interfaceName)
+	}
 	return opt
 }
 
