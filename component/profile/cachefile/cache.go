@@ -7,6 +7,7 @@ import (
 
 	"github.com/metacubex/mihomo/component/profile"
 	C "github.com/metacubex/mihomo/constant"
+	"github.com/metacubex/mihomo/delay"
 	"github.com/metacubex/mihomo/log"
 
 	"github.com/metacubex/bbolt"
@@ -76,8 +77,12 @@ func (c *CacheFile) Close() error {
 }
 
 func initCache() {
+	cacheFile := C.Path.Cache()
+	if delay.IsDelayServer.Load() {
+		cacheFile = C.Path.DelayCache()
+	}
 	options := bbolt.Options{Timeout: time.Second}
-	db, err := bbolt.Open(C.Path.Cache(), fileMode, &options)
+	db, err := bbolt.Open(cacheFile, fileMode, &options)
 	switch err {
 	case bbolt.ErrInvalid, bbolt.ErrChecksum, bbolt.ErrVersionMismatch:
 		if err = os.Remove(C.Path.Cache()); err != nil {

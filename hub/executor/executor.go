@@ -32,6 +32,7 @@ import (
 	"github.com/metacubex/mihomo/config"
 	C "github.com/metacubex/mihomo/constant"
 	"github.com/metacubex/mihomo/constant/provider"
+	"github.com/metacubex/mihomo/delay"
 	"github.com/metacubex/mihomo/dns"
 	"github.com/metacubex/mihomo/listener"
 	authStore "github.com/metacubex/mihomo/listener/auth"
@@ -105,7 +106,7 @@ func ApplyConfig(cfg *config.Config, force bool) {
 	updateGeneral(cfg.General, true)
 	updateNTP(cfg.NTP)
 	updateDNS(cfg.DNS, cfg.General.IPv6)
-	if !config.IsDelayServer.Load() { // delay server will not update listeners and tun
+	if !delay.IsDelayServer.Load() { // delay server will not update listeners and tun
 		updateListeners(cfg.General, cfg.Listeners, force)
 		updateTun(cfg.General) // tun should not care "force"
 	}
@@ -290,7 +291,9 @@ func updateDNS(c *config.DNS, generalIPv6 bool) {
 		resolver.DirectHostResolver = r.Resolver
 	}
 
-	dns.ReCreateServer(c.Listen, r.Resolver, m)
+	if !delay.IsDelayServer.Load() {
+		dns.ReCreateServer(c.Listen, r.Resolver, m)
+	}
 }
 
 func updateHosts(tree *trie.DomainTrie[resolver.HostValue]) {

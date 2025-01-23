@@ -1,4 +1,4 @@
-package config
+package delay
 
 import "github.com/metacubex/mihomo/common/atomic"
 
