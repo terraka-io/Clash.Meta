@@ -214,6 +214,13 @@ func updateListeners(general *config.General, listeners map[string]C.InboundList
 }
 
 func updateTun(general *config.General) {
+	if general.Tun.Enable {
+		tunFileDescriptor := int(delay.TunFileDescriptor.Load())
+		if tunFileDescriptor > 0 {
+			general.Tun.FileDescriptor = tunFileDescriptor
+			log.Infoln("use tun file descriptor: %d", tunFileDescriptor)
+		}
+	}
 	listener.ReCreateTun(general.Tun, tunnel.Tunnel)
 }
 
